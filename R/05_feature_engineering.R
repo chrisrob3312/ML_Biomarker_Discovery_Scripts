@@ -4,11 +4,15 @@
 # in 06_cutpoints.R and the resampling pipeline.
 
 source(here::here("R", "00_config.R"))
+source(here::here("R", "era_lookup.R"))
 
 engineer_features <- function(dat) {
   dat <- dat |>
     dplyr::mutate(
       wbc_dx_log10 = ifelse(wbc_dx > 0, log10(wbc_dx), NA_real_),
+      treatment_era = ifelse(is.na(treatment_era) | treatment_era == "",
+                             as.character(derive_treatment_era(dx_year)),
+                             treatment_era),
 
       # MRD: floor at limit of detection then log10. Adjust LoD to your assay.
       mrd_eoi_log10 = log10(pmax(mrd_eoi_continuous, 1e-5)),

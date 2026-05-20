@@ -37,6 +37,8 @@ clinical:
   - down_syndrome
   - clinical_trial_enrolled
   - treatment_type
+  - protocol_arm                    # specific arm if known (free string)
+  - treatment_era                   # derived from dx_year if arm unknown
   - nci_risk                        # SR/HR by NCI age+WBC
   - dx_year
 
@@ -45,6 +47,24 @@ cytogenetics:
   - cyto_subtype                    # ETV6-RUNX1, hyperdiploid, KMT2A-r, BCR-ABL1, Ph-like, iAMP21, hypodiploid, T-ALL, other
   - ikzf1_status                    # wt / del / ikzf1plus
   - crlf2_rearr
+  # Binary biology flags (0/1). Add as ascertainment expands.
+  - ph_positive                     # BCR::ABL1
+  - ph_like                         # Ph-like (kinase signature +)
+  - kmt2a_rearr
+  - etv6_runx1
+  - tcf3_pbx1
+  - hyperdiploid_high               # >50 chromosomes
+  - hypodiploid_low                 # <44 chromosomes
+  - iamp21
+  - dux4_rearr
+  - mef2d_rearr
+  - zfn384_rearr
+  - paxbike_alt                     # PAX5alt / PAX5 P80R lesions
+  - tp53_alt                        # mutation or del
+  - ikzf1_plus_flag                 # IKZF1 del + (CDKN2A/B, PAX5, PAR1) del without ERG del
+  - cdkn2ab_del
+  - jak_pathway_alt                 # JAK1/2/3, IL7R, EPOR
+  - ras_pathway_alt                 # KRAS/NRAS/PTPN11/FLT3/NF1
 
 # MRD
 mrd:
