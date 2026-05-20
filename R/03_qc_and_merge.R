@@ -22,16 +22,30 @@ build_analytic_table <- function() {
 apply_cohort_filters <- function(dat) {
   cf <- CONFIG$cohort_filters
   if (is.null(cf)) return(dat)
-  n0 <- nrow(dat)
+
+  consort <- data.frame(step = character(), n = integer(),
+                        stringsAsFactors = FALSE)
+  add_step <- function(step, n) consort <<- rbind(consort, data.frame(step, n))
+  add_step("loaded", nrow(dat))
+
   if (!is.null(cf$min_dx_year)) {
     dat <- dat[!is.na(dat$dx_year) & dat$dx_year >= cf$min_dx_year, , drop = FALSE]
+    add_step(sprintf("dx_year >= %d", cf$min_dx_year), nrow(dat))
   }
   if (!is.null(cf$max_dx_year)) {
     dat <- dat[!is.na(dat$dx_year) & dat$dx_year <= cf$max_dx_year, , drop = FALSE]
+    add_step(sprintf("dx_year <= %d", cf$max_dx_year), nrow(dat))
   }
-  log_msg(sprintf("Cohort filter dx_year in [%s, %s]: %d -> %d (%d dropped)",
-                  cf$min_dx_year %||% "-Inf", cf$max_dx_year %||% "Inf",
-                  n0, nrow(dat), n0 - nrow(dat)))
+  if (isTRUE(cf$require_eoi)) {
+    dat <- dat[!is.na(dat$reached_eoi) & dat$reached_eoi == 1, , drop = FALSE]
+    add_step("reached_eoi == 1", nrow(dat))
+  }
+
+  attr(dat, "consort") <- consort
+  log_msg("CONSORT --------------------------------------")
+  for (i in seq_len(nrow(consort))) {
+    log_msg(sprintf("  %-30s n = %d", consort$step[i], consort$n[i]))
+  }
   dat
 }
 

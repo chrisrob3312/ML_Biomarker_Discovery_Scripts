@@ -7,22 +7,33 @@ patient_id: patient_id
 # Cohort filters applied in 03_qc_and_merge.R.
 # Restricting to dx_year >= 2010 limits heterogeneity from older
 # (pre-MRD-driven, pre-dex/HD-MTX-optimized) protocol eras.
+# require_eoi=TRUE drops induction failures/deaths from the EOI-anchored
+# analytic cohort; these patients are summarized in a side table.
 cohort_filters:
   min_dx_year: 2010
   max_dx_year: 2025
+  require_eoi: true
 
 outcomes:
-  relapse:
-    type: binary
-    event_col: relapse_event        # 0/1
-  efs:
+  # All survival outcomes use END OF INDUCTION as the time origin (landmark).
+  # Patients who do not reach EOI (induction failure / induction death) are
+  # excluded from the EOI-anchored analyses and described separately in
+  # Table 1 + a competing-risks supplement.
+  dfs:
     type: survival
-    time_col: efs_time_months
-    event_col: efs_event            # 0=censored, 1=event
+    time_col: dfs_time_months          # months from EOI
+    event_col: dfs_event               # 1 = relapse OR 2nd malignancy OR death any cause
+    cause_col: dfs_cause               # informational: relapse / smn / death / censored
   os:
     type: survival
-    time_col: os_time_months
-    event_col: os_event
+    time_col: os_eoi_time_months       # months from EOI
+    event_col: os_eoi_event            # 1 = death any cause
+  # Relapse kept as a complementary binary view (yes/no at last follow-up).
+  # Useful as a secondary because it ignores time and is easier to interpret
+  # for clinicians; primary clean answer comes from DFS.
+  relapse:
+    type: binary
+    event_col: relapse_event           # 0/1 ever-relapsed
 
 # Horizons for time-dependent metrics (months)
 horizons_months: [12, 36, 60]
@@ -157,15 +168,15 @@ clinical_cutpoints:
 #   omics_top_k:    override top_k by omics block, per outcome
 # Leave empty to inherit the core set unchanged.
 per_outcome:
-  relapse:
-    include_extra: []
-    exclude: []
-    omics_top_k: {}
-  efs:
+  dfs:
     include_extra: []
     exclude: []
     omics_top_k: {}
   os:
+    include_extra: []
+    exclude: []
+    omics_top_k: {}
+  relapse:
     include_extra: []
     exclude: []
     omics_top_k: {}

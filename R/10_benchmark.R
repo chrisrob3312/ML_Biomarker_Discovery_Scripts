@@ -44,16 +44,16 @@ run_all <- function(dat, out_dir = file.path(PATHS$results, "benchmark")) {
   tasks <- build_all_tasks(dat)
   results <- list()
 
-  results$relapse <- run_benchmark(tasks$relapse, "classif")
-  results$efs     <- run_benchmark(tasks$efs,     "surv")
+  results$dfs     <- run_benchmark(tasks$dfs,     "surv")
   results$os      <- run_benchmark(tasks$os,      "surv")
+  results$relapse <- run_benchmark(tasks$relapse, "classif")
 
   # MRD-stratified
   strat <- build_mrd_stratified(dat)
   for (lvl in names(strat)) {
-    results[[paste0("relapse_", lvl)]] <- run_benchmark(strat[[lvl]]$relapse, "classif")
-    results[[paste0("efs_",     lvl)]] <- run_benchmark(strat[[lvl]]$efs,     "surv")
+    results[[paste0("dfs_",     lvl)]] <- run_benchmark(strat[[lvl]]$dfs,     "surv")
     results[[paste0("os_",      lvl)]] <- run_benchmark(strat[[lvl]]$os,      "surv")
+    results[[paste0("relapse_", lvl)]] <- run_benchmark(strat[[lvl]]$relapse, "classif")
   }
 
   saveRDS(results, file.path(out_dir, "benchmark_results.rds"))

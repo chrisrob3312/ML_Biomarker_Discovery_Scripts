@@ -44,13 +44,13 @@ if (sys.nframe() == 0) {
 
   # Example: refit elastic-net Cox and RSF + baseline Cox-RCS for each outcome.
   out <- list()
-  out$relapse_glmnet <- fit_final(tasks$relapse,
-                                  make_classif_learners()$glmnet, "classif")
-  out$efs_glmnet     <- fit_final(tasks$efs,
+  out$dfs_glmnet     <- fit_final(tasks$dfs,
                                   make_surv_learners()$glmnet, "surv")
   out$os_glmnet      <- fit_final(tasks$os,
                                   make_surv_learners()$glmnet, "surv")
-  out$efs_cox_rcs    <- fit_baseline_cox(dat, "efs")
+  out$relapse_glmnet <- fit_final(tasks$relapse,
+                                  make_classif_learners()$glmnet, "classif")
+  out$dfs_cox_rcs    <- fit_baseline_cox(dat, "dfs")
   out$os_cox_rcs     <- fit_baseline_cox(dat, "os")
 
   saveRDS(out, file.path(PATHS$results, "final_models.rds"))

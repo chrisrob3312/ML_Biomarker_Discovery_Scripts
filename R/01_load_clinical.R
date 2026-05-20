@@ -65,11 +65,18 @@ clinical_template <- function() {
     adi_national_decile     = integer(),
     adi_state_decile        = integer(),
     insurance_payer         = character(),
-    relapse_event           = integer(),           # 0/1
-    efs_time_months         = numeric(),
-    efs_event               = integer(),
-    os_time_months          = numeric(),
-    os_event                = integer()
+    # End-of-induction landmark
+    reached_eoi             = integer(),           # 0/1: completed induction
+    induction_outcome       = character(),         # CR / failure / death / other
+    time_dx_to_eoi_months   = numeric(),           # used as offset / for landmark
+    # EOI-anchored outcomes
+    dfs_time_months         = numeric(),           # from EOI to event/censor
+    dfs_event               = integer(),           # 1 = relapse|SMN|death
+    dfs_cause               = character(),         # relapse / smn / death / censored
+    os_eoi_time_months      = numeric(),
+    os_eoi_event            = integer(),
+    # Ever-relapsed (for binary relapse model)
+    relapse_event           = integer()
   )
 }
 

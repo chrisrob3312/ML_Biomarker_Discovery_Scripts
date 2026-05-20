@@ -16,6 +16,8 @@ non_feature_cols <- function() {
 # Resolve the feature set for a given outcome: core set from features.yaml
 # minus exclusions plus extras. Core = clinical + cytogenetics + mrd +
 # ancestry_sdoh + ancestry-dosed risk allele columns present in the data.
+# All survival models are EOI-anchored, so end-of-induction predictors
+# (MRD, induction kinetics) are legitimate baseline covariates.
 core_features <- function(dat) {
   cols <- unique(unlist(c(
     CONFIG$clinical,
@@ -87,9 +89,9 @@ build_task_survival <- function(dat, outcome_name) {
 
 build_all_tasks <- function(dat) {
   list(
-    relapse = build_task_relapse(dat),
-    efs     = build_task_survival(dat, "efs"),
-    os      = build_task_survival(dat, "os")
+    dfs     = build_task_survival(dat, "dfs"),
+    os      = build_task_survival(dat, "os"),
+    relapse = build_task_relapse(dat)
   )
 }
 
