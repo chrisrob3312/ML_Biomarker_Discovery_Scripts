@@ -21,6 +21,8 @@ clinical_template <- function() {
     patient_id              = character(),
     age_at_dx_years         = numeric(),
     sex                     = character(),         # M / F
+    lineage                 = character(),         # B / T / MPAL / other
+    relapsed_at_dx          = integer(),           # 0/1
     race_ethnicity          = character(),         # NHW, NHB, Hispanic, Asian, Other
     wbc_dx                  = numeric(),           # x10^9/L
     cns_status              = character(),         # CNS1 / CNS2 / CNS3

@@ -36,6 +36,33 @@ apply_cohort_filters <- function(dat) {
     dat <- dat[!is.na(dat$dx_year) & dat$dx_year <= cf$max_dx_year, , drop = FALSE]
     add_step(sprintf("dx_year <= %d", cf$max_dx_year), nrow(dat))
   }
+  if (!is.null(cf$min_age_years)) {
+    dat <- dat[!is.na(dat$age_at_dx_years) &
+                 dat$age_at_dx_years >= cf$min_age_years, , drop = FALSE]
+    add_step(sprintf("age >= %g", cf$min_age_years), nrow(dat))
+  }
+  if (!is.null(cf$max_age_years)) {
+    dat <- dat[!is.na(dat$age_at_dx_years) &
+                 dat$age_at_dx_years <= cf$max_age_years, , drop = FALSE]
+    add_step(sprintf("age <= %g", cf$max_age_years), nrow(dat))
+  }
+  if (!is.null(cf$lineage_keep)) {
+    dat <- dat[!is.na(dat$lineage) & dat$lineage %in% cf$lineage_keep, , drop = FALSE]
+    add_step(sprintf("lineage in {%s}",
+                     paste(cf$lineage_keep, collapse = ",")), nrow(dat))
+  }
+  if (isTRUE(cf$exclude_down_syndrome)) {
+    dat <- dat[is.na(dat$down_syndrome) | dat$down_syndrome == 0, , drop = FALSE]
+    add_step("down_syndrome == 0", nrow(dat))
+  }
+  if (isTRUE(cf$exclude_mpal)) {
+    dat <- dat[is.na(dat$lineage) | dat$lineage != "MPAL", , drop = FALSE]
+    add_step("not MPAL", nrow(dat))
+  }
+  if (isTRUE(cf$exclude_relapsed_at_dx)) {
+    dat <- dat[is.na(dat$relapsed_at_dx) | dat$relapsed_at_dx == 0, , drop = FALSE]
+    add_step("de novo (not relapsed_at_dx)", nrow(dat))
+  }
   if (isTRUE(cf$require_eoi)) {
     dat <- dat[!is.na(dat$reached_eoi) & dat$reached_eoi == 1, , drop = FALSE]
     add_step("reached_eoi == 1", nrow(dat))

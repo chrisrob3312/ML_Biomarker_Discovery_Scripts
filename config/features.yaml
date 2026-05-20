@@ -13,6 +13,12 @@ cohort_filters:
   min_dx_year: 2010
   max_dx_year: 2025
   require_eoi: true
+  min_age_years: 0
+  max_age_years: 21
+  lineage_keep: ["B"]            # B-ALL only
+  exclude_down_syndrome: true
+  exclude_mpal: true             # mixed-phenotype acute leukemia
+  exclude_relapsed_at_dx: true
 
 outcomes:
   # All survival outcomes use END OF INDUCTION as the time origin (landmark).
