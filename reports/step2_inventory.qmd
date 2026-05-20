@@ -1,0 +1,119 @@
+---
+title: "Step 2 — Data Inventory & Sample-Size Adequacy"
+subtitle: "Pediatric/AYA B-ALL DFS/OS prediction, SW US cohort"
+date: today
+format:
+  html:
+    toc: true
+    toc-depth: 3
+    code-fold: true
+    embed-resources: true
+execute:
+  warning: false
+  message: false
+---
+
+```{r setup}
+source(here::here("R", "00_config.R"))
+OUT <- file.path(PATHS$results, "step2")
+```
+
+# 1. CONSORT cohort assembly
+
+```{r consort}
+consort <- readr::read_csv(file.path(OUT, "consort.csv"), show_col_types = FALSE)
+gt::gt(consort) |>
+  gt::tab_header(title = "Cohort assembly (CONSORT-style flow)")
+```
+
+Interpretation: each row removes patients failing one eligibility rule.
+Final analytic N is the bottom row. If too low, the **extension decision**
+in Section 6 will indicate whether to widen the dx_year window.
+
+# 2. Follow-up
+
+```{r followup}
+fup <- readRDS(file.path(OUT, "followup_summary.rds"))
+tibble::tibble(
+  outcome = names(fup),
+  median_followup_months = sapply(fup, \(x) x$median),
+  lci = sapply(fup, \(x) x$lci),
+  uci = sapply(fup, \(x) x$uci)
+) |> gt::gt()
+```
+
+Median follow-up estimated by reverse Kaplan–Meier (Clark's method).
+This is the *right* way to report follow-up: it accounts for differential
+censoring across patients. A common mistake is to report mean follow-up
+naïvely, which underestimates the available information.
+
+# 3. Table 1
+
+Open the standalone HTML files in `results/step2/` for the gtsummary tables:
+
+- `table1_by_dfs.html` — overall + stratified by DFS event
+- `table1_by_os.html` — overall + stratified by OS event
+- `table1_by_ethnicity.html` — Hispanic vs Non-Hispanic
+- `table1_by_era.html` — by treatment era
+
+# 4. Missingness
+
+```{r missingness}
+miss <- readr::read_csv(file.path(OUT, "missingness_summary.csv"),
+                        show_col_types = FALSE)
+gt::gt(head(miss, 30)) |>
+  gt::tab_header(title = "Top 30 variables by missingness")
+knitr::include_graphics(file.path(OUT, "missingness_heatmap.png"))
+knitr::include_graphics(file.path(OUT, "missingness_upset.png"))
+```
+
+How to read these:
+- Top variables list is what you actually have to impute.
+- The heatmap shows whether missingness is patchy (likely MAR) or
+  block-structured (likely systematic — e.g. an assay only run in
+  later years; that's MAR conditional on dx_year).
+- The UpSet plot shows *co-missingness patterns*. Highly correlated
+  missingness across variables suggests they're missing for the
+  same structural reason and should share auxiliaries.
+
+# 5. Sample-size adequacy
+
+```{r sample_size}
+ss <- readRDS(file.path(OUT, "sample_size.rds"))
+ss
+```
+
+`pmsampsize` returns: minimum required N for each criterion (R² shrinkage,
+calibration slope, MAPE, events-per-parameter), and overall recommended N.
+The "Final SS" row is the binding minimum.
+
+If observed N is below `Final SS`: you have one or more of:
+- Too many candidate parameters → prune or use stronger penalization
+- Too low event rate → extend follow-up or dx window
+- Too optimistic R² assumption → re-run with R² = 0.08 as sensitivity
+
+# 6. Extension decision
+
+```{r decision}
+d <- readRDS(file.path(OUT, "extension_decision.rds"))
+tibble::tibble(metric = c("Total N", "DFS events", "OS events", "Tier"),
+               value  = c(d$n_total, d$n_dfs_events, d$n_os_events, d$tier)) |>
+  gt::gt() |> gt::tab_header(title = "dx-window extension decision")
+```
+
+Tier rule (pre-specified in SAP §5):
+
+| Final N | DFS events | OS events | Action |
+|---|---|---|---|
+| ≥ 1500 | ≥ 200 | ≥ 100 | Keep 2010 |
+| 1000–1500 | 100–200 | 50–100 | Keep 2010, more penalization |
+| ≥ 700 | ≥ 70 | ≥ 35 | Extend to 2005 |
+| < 700 | < 70 | < 35 | Extend to 2000 + prune |
+
+# 7. Next step
+
+If Tier 1 or 2: lock SAP v1.0 and proceed to Step 3 (baseline Cox-RCS
+on the full candidate set, before ML benchmark).
+
+If Tier 3 or 4: update `config/features.yaml::cohort_filters$min_dx_year`,
+re-run Step 2, re-evaluate.
