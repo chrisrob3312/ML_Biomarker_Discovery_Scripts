@@ -14,7 +14,24 @@ build_analytic_table <- function() {
     dplyr::left_join(clin, ra, by = CONFIG$patient_id)
   } else clin
 
+  dat <- apply_cohort_filters(dat)
   qc_report(dat)
+  dat
+}
+
+apply_cohort_filters <- function(dat) {
+  cf <- CONFIG$cohort_filters
+  if (is.null(cf)) return(dat)
+  n0 <- nrow(dat)
+  if (!is.null(cf$min_dx_year)) {
+    dat <- dat[!is.na(dat$dx_year) & dat$dx_year >= cf$min_dx_year, , drop = FALSE]
+  }
+  if (!is.null(cf$max_dx_year)) {
+    dat <- dat[!is.na(dat$dx_year) & dat$dx_year <= cf$max_dx_year, , drop = FALSE]
+  }
+  log_msg(sprintf("Cohort filter dx_year in [%s, %s]: %d -> %d (%d dropped)",
+                  cf$min_dx_year %||% "-Inf", cf$max_dx_year %||% "Inf",
+                  n0, nrow(dat), n0 - nrow(dat)))
   dat
 }
 

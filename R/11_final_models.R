@@ -18,9 +18,20 @@ fit_final <- function(task, learner, task_type = c("surv", "classif")) {
 fit_baseline_cox <- function(dat, outcome_name) {
   o <- CONFIG$outcomes[[outcome_name]]
   feats <- resolve_features(dat, outcome_name)
+
+  # Strip the combined nested factor used by ML learners and rebuild it
+  # explicitly as era + era:protocol_arm so the marginal era effect stays
+  # identified for patients with protocol_arm = "unknown".
+  feats <- setdiff(feats, "protocol_nested")
   spline_now <- intersect(CONFIG$spline_vars, feats)
+
   rhs <- c(setdiff(feats, spline_now),
-           sprintf("rms::rcs(%s, 4)", spline_now))
+           sprintf("rms::rcs(%s, 4)", spline_now),
+           "treatment_era",
+           "treatment_era:protocol_arm_clean")
+  # Deduplicate in case treatment_era was already in feats
+  rhs <- unique(rhs)
+
   f <- stats::as.formula(sprintf("survival::Surv(%s, %s) ~ %s",
                                  o$time_col, o$event_col,
                                  paste(rhs, collapse = " + ")))

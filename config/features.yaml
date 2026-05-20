@@ -4,6 +4,13 @@
 
 patient_id: patient_id
 
+# Cohort filters applied in 03_qc_and_merge.R.
+# Restricting to dx_year >= 2010 limits heterogeneity from older
+# (pre-MRD-driven, pre-dex/HD-MTX-optimized) protocol eras.
+cohort_filters:
+  min_dx_year: 2010
+  max_dx_year: 2025
+
 outcomes:
   relapse:
     type: binary

@@ -11,8 +11,20 @@ engineer_features <- function(dat) {
     dplyr::mutate(
       wbc_dx_log10 = ifelse(wbc_dx > 0, log10(wbc_dx), NA_real_),
       treatment_era = ifelse(is.na(treatment_era) | treatment_era == "",
-                             as.character(derive_treatment_era(dx_year)),
+                             as.character(derive_treatment_era(
+                               dx_year,
+                               min_year = CONFIG$cohort_filters$min_dx_year %||% 2010,
+                               max_year = CONFIG$cohort_filters$max_dx_year %||% 2025)),
                              treatment_era),
+      # Nested factor: protocol_arm nested within treatment_era. When
+      # protocol_arm is unknown we record "<era>/unknown" so the era effect
+      # is still identified for that patient. Baseline Cox uses era and
+      # era:protocol_arm separately (see 11_final_models.R); ML learners
+      # use this single combined factor.
+      protocol_arm_clean = dplyr::if_else(
+        is.na(protocol_arm) | protocol_arm == "" | tolower(protocol_arm) == "unknown",
+        "unknown", protocol_arm),
+      protocol_nested = factor(paste(treatment_era, protocol_arm_clean, sep = "/")),
 
       # MRD: floor at limit of detection then log10. Adjust LoD to your assay.
       mrd_eoi_log10 = log10(pmax(mrd_eoi_continuous, 1e-5)),

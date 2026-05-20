@@ -72,3 +72,5 @@ TUNING <- list(
 log_msg <- function(...) {
   message(sprintf("[%s] %s", format(Sys.time(), "%H:%M:%S"), paste0(...)))
 }
+
+`%||%` <- function(a, b) if (is.null(a)) b else a

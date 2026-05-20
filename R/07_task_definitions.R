@@ -23,9 +23,13 @@ core_features <- function(dat) {
     CONFIG$mrd,
     CONFIG$ancestry_sdoh
   )))
+  # Drop the two raw protocol columns - the nested factor below replaces
+  # them in ML learners. Baseline Cox in 11 still reads them directly.
+  cols <- setdiff(cols, c("protocol_arm", "treatment_era"))
   # Engineered companions
   cols <- c(cols, "wbc_dx_log10", "mrd_eoi_log10", "mrd_eoc_log10",
-            "age_cat_clin", "wbc_cat_clin", "mrd_eoi_cat_clin")
+            "age_cat_clin", "wbc_cat_clin", "mrd_eoi_cat_clin",
+            "protocol_nested")
   # Risk-allele + local-ancestry-dosed columns
   ra_cols <- character()
   for (ra in CONFIG$risk_alleles) {
