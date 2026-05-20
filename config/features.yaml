@@ -1,0 +1,150 @@
+# Feature configuration for B-ALL outcome prediction
+# Edit this file to control which features enter each model family.
+# Scripts read this via yaml::read_yaml() in R/00_config.R.
+
+patient_id: patient_id
+
+outcomes:
+  relapse:
+    type: binary
+    event_col: relapse_event        # 0/1
+  efs:
+    type: survival
+    time_col: efs_time_months
+    event_col: efs_event            # 0=censored, 1=event
+  os:
+    type: survival
+    time_col: os_time_months
+    event_col: os_event
+
+# Horizons for time-dependent metrics (months)
+horizons_months: [12, 36, 60]
+
+# Strata for MRD-stratified models. Build one model per stratum
+# AND an overall model that includes MRD as a covariate.
+mrd_strata:
+  column: mrd_eoi_category          # neg / low_pos / high_pos
+  levels: [neg, low_pos, high_pos]
+
+# Clinical / demographic
+clinical:
+  - age_at_dx_years
+  - sex
+  - race_ethnicity
+  - wbc_dx                          # log-transformed in 05
+  - cns_status                      # CNS1/2/3
+  - bmi_z                           # age-sex-normalized z-score
+  - down_syndrome
+  - clinical_trial_enrolled
+  - treatment_type
+  - nci_risk                        # SR/HR by NCI age+WBC
+  - dx_year
+
+# Disease biology
+cytogenetics:
+  - cyto_subtype                    # ETV6-RUNX1, hyperdiploid, KMT2A-r, BCR-ABL1, Ph-like, iAMP21, hypodiploid, T-ALL, other
+  - ikzf1_status                    # wt / del / ikzf1plus
+  - crlf2_rearr
+
+# MRD
+mrd:
+  - mrd_eoi_continuous              # log10-transformed in 05 (floor at LoD)
+  - mrd_eoi_category
+  - mrd_eoc_continuous              # end of consolidation if available
+  - day8_pb_blasts
+  - day15_marrow_blasts
+
+# Ancestry & SDOH
+ancestry_sdoh:
+  - global_ancestry_eur
+  - global_ancestry_afr
+  - global_ancestry_eas
+  - global_ancestry_amr
+  - global_ancestry_sas
+  - adi_national_decile
+  - adi_state_decile
+  - insurance_payer
+
+# Risk alleles + local ancestry dosage at each locus.
+# For each allele below, expect a column <allele_id>_dosage (0/1/2)
+# AND a column <allele_id>_la_<ancestry>_dose (0/1/2) for each ancestry.
+risk_alleles:
+  - id: ARID5B_rs7089424
+    locus: 10q21.2
+    ancestries: [eur, afr, amr, eas]
+  - id: IKZF1_rs4132601
+    locus: 7p12.2
+    ancestries: [eur, afr, amr, eas]
+  - id: GATA3_rs3824662
+    locus: 10p14
+    ancestries: [eur, afr, amr, eas]
+  - id: CDKN2A_rs3731217
+    locus: 9p21.3
+    ancestries: [eur, afr, amr, eas]
+  - id: PIP4K2A_rs7088318
+    locus: 10p12.2
+    ancestries: [eur, afr, amr, eas]
+
+# Omics blocks. Top-K selected per outcome inside the inner CV loop
+# (see R/05_feature_engineering.R). Never select on the full dataset.
+omics:
+  bulk_rna:
+    file: data/processed/bulk_rna_vst.rds
+    top_k: 50
+    screen: cox_univariate          # cox_univariate | logistic_univariate | limma
+  methylation_tumor:
+    file: data/processed/meth_tumor_mvals.rds
+    top_k: 50
+    screen: cox_univariate
+  metabolomics:
+    file: data/processed/metabolomics_norm.rds
+    top_k: 30
+    screen: cox_univariate
+  methylation_germline:
+    file: data/processed/meth_germline_mvals.rds
+    top_k: 30
+    screen: cox_univariate
+    optional: true                  # skipped if file missing
+
+# Continuous variables to fit with restricted cubic splines in baseline Cox / GLM
+spline_vars:
+  - age_at_dx_years
+  - wbc_dx_log10
+  - mrd_eoi_log10
+  - bmi_z
+  - adi_national_decile
+
+# Pre-specified clinical cut points (used in stratified tables and the
+# "clinical" reference model, NOT for trimming continuous variables in ML models).
+clinical_cutpoints:
+  age_at_dx_years: [1, 10, 16]
+  wbc_dx: [50]                      # x10^9/L; >=50 = NCI HR
+  mrd_eoi_percent: [0.01, 0.1, 1.0]
+  adi_national_decile: [3, 7]       # tertile-ish
+
+# Per-outcome overrides. Start identical (core feature set defined above),
+# then refine independently as you learn what matters per outcome.
+# Each entry may contain:
+#   include_extra:  features added on top of the core set
+#   exclude:        features dropped from the core set for this outcome
+#   omics_top_k:    override top_k by omics block, per outcome
+# Leave empty to inherit the core set unchanged.
+per_outcome:
+  relapse:
+    include_extra: []
+    exclude: []
+    omics_top_k: {}
+  efs:
+    include_extra: []
+    exclude: []
+    omics_top_k: {}
+  os:
+    include_extra: []
+    exclude: []
+    omics_top_k: {}
+
+# Maxstat sensitivity scan controls (exploratory only)
+maxstat:
+  enabled: true
+  bootstrap_reps: 1000
+  fdr_method: BH

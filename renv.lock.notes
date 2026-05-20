@@ -1,0 +1,22 @@
+Run once in this directory to lock dependencies:
+
+  install.packages("renv")
+  renv::init()
+  renv::install(c(
+    "yaml", "here", "data.table", "dplyr", "tidyr", "readr", "stringr",
+    "purrr", "forcats", "tibble",
+    "survival", "rms", "glmnet", "mice",
+    "maxstat", "survminer",
+    "mlr3", "mlr3proba", "mlr3learners", "mlr3extralearners",
+    "mlr3tuning", "mlr3pipelines", "mlr3filters", "mlr3misc",
+    "paradox",
+    "ranger", "xgboost", "randomForestSRC", "aorsf",
+    "riskRegression", "timeROC", "dcurves",
+    "fastshap", "kernelshap", "iml",
+    "ggplot2", "quarto"
+  ))
+  renv::snapshot()
+
+Optional deep-learning survival learners:
+  remotes::install_github("mlr-org/mlr3torch")
+  # then: lrn("surv.deepsurv"), lrn("surv.deephit")
